@@ -1,7 +1,2 @@
-node_modules/.package-lock.json
-node_modules/chrome-types/_all.d.ts
-node_modules/chrome-types/index.d.ts
-node_modules/chrome-types/LICENSE
-node_modules/chrome-types/package.json
-node_modules/chrome-types/README.md
 package-lock.json
+node_modules/

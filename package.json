@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "chrome-types": "^0.1.270"
+    "chrome-types": "^0.1.270",
+    "pino": "^8.19.0"
   }
 }
