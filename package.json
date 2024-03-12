@@ -1,5 +1,15 @@
 {
-  "dependencies": {
-    "chrome-types": "^0.1.270"
+  "name": "foureyes",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^1.0.14",
+    "chrome-types": "^0.1.270",
+    "vite": "^2.9.15"
   }
 }

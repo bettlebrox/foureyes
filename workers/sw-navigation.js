@@ -14,14 +14,16 @@ chrome.webNavigation.onCompleted.addListener((details) => {
 
 //log transitiontype of navigation
 chrome.webNavigation.onCommitted.addListener((details) => {
-    chrome.tabs.get(details.tabId, function (tab) {
-        if (!tab || details.transitionType == 'auto_subframe') return;
-        console.log({
-            'type': 'navigation', 'tabId': details.tabId,
-            'timestamp': details.timeStamp,
-            'transitionType': details.transitionType,
-            'documentId': details.documentId,
-            'url': details.url
+    try{
+        chrome.tabs.get(details.tabId, function (tab) {
+            if (!tab || details.transitionType == 'auto_subframe') return;
+            console.log({
+                'type': 'navigation', 'tabId': details.tabId,
+                'timestamp': details.timeStamp,
+                'transitionType': details.transitionType,
+                'documentId': details.documentId,
+                'url': details.url
+            })
         })
-    })
+    }finally{}
 });
