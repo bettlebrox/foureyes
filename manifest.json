@@ -11,20 +11,19 @@
     "service_worker": "workers/service-worker.js",
     "type": "module"
   },
-  "omnibox": {
-    "keyword": "api"
-  },
   "permissions": [
     "storage",
-    "alarms"
+    "alarms",
+    "webNavigation",
+    "tabs"
   ],
   "host_permissions": [
-    "https://extension-tips.glitch.me/*"
+    "https://*/*"
   ],
   "content_scripts": [
     {
       "matches": [
-        "https://developer.chrome.com/docs/extensions/reference/*"
+        "https://*/*"
       ],
       "js": [
         "content/content.js"
