@@ -3,9 +3,14 @@
   "name": "Foureyes",
   "description": "Learning what you are learning while browsing",
   "version": "1.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmp0MkoFR+6ypkTdHNhR9KKp2ndanTHT32TT1mD1m1fY3gsOUckOZeEP2qGh3CZ/dAEDsijTwizxLDzAQZ+CZpMo7SDHuUsM2CcJuKzT+BfGcbNVnrARapR+732R7wJ5lb7ldxxEZ0EH6v5hTUCH2L9qHo4NDsTCBy0CmJsPoeMOBSGInltL3F8DGlp7XX2BK6cUqrpNML0leFd+bqLAAtDh6wgHqM860rXjWFu4TaWvph+ENE+243JKEMzA/O0ANnkFTme4aogSuOiqTbgfFmqzpJN0t/6JNqX70LIlFyQk3amvEtzuyej+S9RwYf5jmu9PWScQyvhHS2C9lRea9OwIDAQAB",
   "action": {
-    "default_popup": "hello.html",
+    "default_popup": "index.html",
     "default_icon": "hello_extensions.png"
+  },
+  "oauth2": {
+    "client_id": "258123725523-e9g2j70es4083n0if9cg59cbdn9h898q.apps.googleusercontent.com",
+    "scopes":["https://www.googleapis.com/auth/userinfo.email"]
   },
   "background": {
     "service_worker": "workers/service-worker.js",
@@ -15,7 +20,9 @@
     "storage",
     "alarms",
     "webNavigation",
-    "tabs"
+    "tabs",
+    "offscreen",
+    "identity"
   ],
   "host_permissions": [
     "https://*/*"
