@@ -9,8 +9,8 @@
     "default_icon": "hello_extensions.png"
   },
   "oauth2": {
-    "client_id": "258123725523-e9g2j70es4083n0if9cg59cbdn9h898q.apps.googleusercontent.com",
-    "scopes":["https://www.googleapis.com/auth/userinfo.email"]
+    "client_id": "258123725523-h9bfbasesfqg203rorq4prvnb29qlr13.apps.googleusercontent.com",
+    "scopes":["email","openid","profile"]
   },
   "background": {
     "service_worker": "workers/service-worker.js",
