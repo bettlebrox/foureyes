@@ -1,17 +1,6 @@
-import { CognitoIdentityClient, CognitoIdentity, GetIdCommand } from "@aws-sdk/client-cognito-identity"; // ES Modules import
-import {
-    CognitoIdentityProviderClient,
-    GetUserCommand,
-} from "@aws-sdk/client-cognito-identity-provider";
-import { fromCognitoIdentityPool } from "@aws-sdk/credential-provider-cognito-identity";
-import {
-    S3Client,
-    PutObjectCommand,
-    GetObjectCommand,
-    ListObjectsCommand,
-    DeleteObjectCommand,
-} from "@aws-sdk/client-s3";
-const NAVLOG_REST_HOST = 'https://p5cgnlejzk.execute-api.eu-west-1.amazonaws.com/prod/api/navlogs';
+import { CognitoIdentityClient, GetIdCommand, GetCredentialsForIdentityCommand } from "@aws-sdk/client-cognito-identity"; // ES Modules import
+import { apigClientFactory } from '/workers/apigClient.js'
+
 
 var manifest = chrome.runtime.getManifest();
 var clientId = encodeURIComponent(manifest.oauth2.client_id);
@@ -43,8 +32,24 @@ chrome.identity.launchWebAuthFlow(
                     "accounts.google.com": token,
                 }
             })
-            ci.send(command, function (err, ouput) {
+            ci.send(command, function (err, output) {
                 console.log("auth response: " + err + "data:" + output)
+                const cmd = new GetCredentialsForIdentityCommand({
+                    IdentityId: output.IdentityId,
+                    Logins: { // LoginsMap
+                        "accounts.google.com": token,
+                    }
+                })
+                ci.send(cmd, function (err, output) {
+                    chrome.storage.local.set({
+                        'accessKeyId': output.Credentials.AccessKeyId,
+                       'secretAccessKey': output.Credentials.SecretKey,
+                       'sessionToken': output.Credentials.SessionToken,
+                    }, function () {
+                        console.log("credentials stored")
+                    })
+                    console.log("credentials response: " + err + "data:" + output)
+                })
             })
         }
     }
@@ -79,11 +84,25 @@ function createNavlogFromContent(message, sender) {
 
 
 function postNavlog(navlog) {
-    fetch(NAVLOG_REST_HOST, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(navlog)
-    })
+        chrome.storage.local.get(['accessKeyId', 'secretAccessKey', 'sessionToken'], async function (result) {
+            var apigClient = apigClientFactory.newClient({
+                accessKey: result.accessKeyId,
+                secretKey: result.secretAccessKey,
+                sessionToken: result.sessionToken,
+                region: 'eu-west-1' }) 
+            apigClient.apiNavlogsPost({}, navlog, {})
+                .then(function(result){
+                   console.log("Navigation log posted successfully");
+                }).catch( function(result){
+                    console.log("Navigation log posting failed", result);
+                });
+        })
+        /*fetch(NAVLOG_REST_HOST, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': idToken },
+            body: JSON.stringify(navlog)
+        })*/
+
 }
 function getTabandPost(webNavigationDetails) {
     chrome.tabs.get(webNavigationDetails.tabId, function (tab) {
