@@ -382,7 +382,6 @@ apiGateway.core.sigV4ClientFactory.newClient = function (config) {
             headers: headers,
             data: body
         };
-        console.log("signign request - can req: ",canonicalRequest, "string to sign: ",stringToSign);
         return fetch(signedRequest.url,{
             method:signedRequest.method, headers:signedRequest.headers,body:signedRequest.data
         });

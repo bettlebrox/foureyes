@@ -33,8 +33,18 @@
         "https://*/*"
       ],
       "js": [
+        "content/html2canvas.min.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://*/*"
+      ],
+      "js": [
         "content/content.js"
-      ]
+      ],
+      "run_at": "document_idle"
     }
   ]
 }

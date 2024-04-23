@@ -2,58 +2,64 @@ import { CognitoIdentityClient, GetIdCommand, GetCredentialsForIdentityCommand }
 import { apigClientFactory } from '/workers/apigClient.js'
 
 
-var manifest = chrome.runtime.getManifest();
-var clientId = encodeURIComponent(manifest.oauth2.client_id);
-var scopes = encodeURIComponent(manifest.oauth2.scopes.join(' '));
-var redirectUri = encodeURIComponent('https://' + chrome.runtime.id + '.chromiumapp.org');
-var url = 'https://accounts.google.com/o/oauth2/auth' +
-    '?client_id=' + clientId +
-    '&response_type=id_token' +
-    '&access_type=offline' +
-    '&redirect_uri=' + redirectUri +
-    '&scope=' + scopes;
-chrome.identity.launchWebAuthFlow(
-    {
-        'url': url,
-        'interactive': true
-    },
-    function (redirectedTo) {
-        if (chrome.runtime.lastError) {
-            // Example: Authorization page could not be loaded.
-            console.log(chrome.runtime.lastError.message);
+init()
+
+function awsAuth(token){
+    const ci = new CognitoIdentityClient({ region: "eu-west-1" })
+    const command = new GetIdCommand({
+        IdentityPoolId: "eu-west-1:d2933d30-6cef-4ea0-a6da-d0ff89f933f9",
+        Logins: { // LoginsMap
+            "accounts.google.com": token,
         }
-        else {
-            var token = redirectedTo.split('#', 2)[1].split('&')[0].split('id_token=')[1];
-            // Example: id_token=<YOUR_BELOVED_ID_TOKEN>&authuser=0&hd=<SOME.DOMAIN.PL>&session_state=<SESSION_SATE>&prompt=<PROMPT>
-            const ci = new CognitoIdentityClient({ region: "eu-west-1" })
-            const command = new GetIdCommand({
-                IdentityPoolId: "eu-west-1:d2933d30-6cef-4ea0-a6da-d0ff89f933f9",
-                Logins: { // LoginsMap
-                    "accounts.google.com": token,
-                }
+    })
+    ci.send(command, function (err, output) {
+        console.log("auth response: " + output +" error: "+err)
+        const cmd = new GetCredentialsForIdentityCommand({
+            IdentityId: output.IdentityId,
+            Logins: { // LoginsMap
+                "accounts.google.com": token,
+            }
+        })
+        ci.send(cmd, function (err, output) {
+            chrome.storage.local.set({
+                'accessKeyId': output.Credentials.AccessKeyId,
+            'secretAccessKey': output.Credentials.SecretKey,
+            'sessionToken': output.Credentials.SessionToken,
+            }, function () {
+                console.log("credentials stored")
             })
-            ci.send(command, function (err, output) {
-                console.log("auth response: " + err + "data:" + output)
-                const cmd = new GetCredentialsForIdentityCommand({
-                    IdentityId: output.IdentityId,
-                    Logins: { // LoginsMap
-                        "accounts.google.com": token,
-                    }
-                })
-                ci.send(cmd, function (err, output) {
-                    chrome.storage.local.set({
-                        'accessKeyId': output.Credentials.AccessKeyId,
-                       'secretAccessKey': output.Credentials.SecretKey,
-                       'sessionToken': output.Credentials.SessionToken,
-                    }, function () {
-                        console.log("credentials stored")
-                    })
-                    console.log("credentials response: " + err + "data:" + output)
-                })
-            })
+            console.log("credentials response: " +output + " error: "+err)
+        })
+    })
+
+}
+
+function init(){
+    var manifest = chrome.runtime.getManifest();
+    var clientId = encodeURIComponent(manifest.oauth2.client_id);
+    var scopes = encodeURIComponent(manifest.oauth2.scopes.join(' '));
+    var redirectUri = encodeURIComponent('https://' + chrome.runtime.id + '.chromiumapp.org');
+    var url = 'https://accounts.google.com/o/oauth2/auth' +
+        '?client_id=' + clientId +
+        '&response_type=id_token' +
+        '&access_type=offline' +
+        '&redirect_uri=' + redirectUri +
+        '&scope=' + scopes;
+    chrome.identity.launchWebAuthFlow(
+        {
+            'url': url,
+            'interactive': true
+        },
+        function (redirectedTo) {
+            if (chrome.runtime.lastError) {
+                console.log("Auth page could not be loaded: "+chrome.runtime.lastError.message);
+                return
+            }
+            const token = redirectedTo.split('#', 2)[1].split('&')[0].split('id_token=')[1];
+            awsAuth(token)
         }
-    }
-);
+    );
+}
 
 function createNavlog(webNavigationDetails, tab) {
     var navlog = {
@@ -77,12 +83,11 @@ function createNavlogFromContent(message, sender) {
         'documentId': String(sender.tab.documentId),
         'url': message.url,
         'body_inner_html': 'body_inner_html' in message? message.body_inner_html.substring(0,5000):null,
-        'body_text': 'body_text' in message? message.body_text.substring(0,5000):null
+        'body_text': 'body_text' in message? message.body_text.substring(0,5000):null,
+        'image':message.image
     }
     return navlog;
 }
-
-
 function postNavlog(navlog) {
         chrome.storage.local.get(['accessKeyId', 'secretAccessKey', 'sessionToken'], async function (result) {
             var apigClient = apigClientFactory.newClient({
@@ -97,13 +102,8 @@ function postNavlog(navlog) {
                     console.log("Navigation log posting failed", result);
                 });
         })
-        /*fetch(NAVLOG_REST_HOST, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': idToken },
-            body: JSON.stringify(navlog)
-        })*/
-
 }
+
 function getTabandPost(webNavigationDetails) {
     chrome.tabs.get(webNavigationDetails.tabId, function (tab) {
         if (!tab || (webNavigationDetails.url && webNavigationDetails.url == 'about:blank') ||
