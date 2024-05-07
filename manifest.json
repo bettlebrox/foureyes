@@ -4,10 +4,6 @@
   "description": "Learning what you are learning while browsing",
   "version": "1.0",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmp0MkoFR+6ypkTdHNhR9KKp2ndanTHT32TT1mD1m1fY3gsOUckOZeEP2qGh3CZ/dAEDsijTwizxLDzAQZ+CZpMo7SDHuUsM2CcJuKzT+BfGcbNVnrARapR+732R7wJ5lb7ldxxEZ0EH6v5hTUCH2L9qHo4NDsTCBy0CmJsPoeMOBSGInltL3F8DGlp7XX2BK6cUqrpNML0leFd+bqLAAtDh6wgHqM860rXjWFu4TaWvph+ENE+243JKEMzA/O0ANnkFTme4aogSuOiqTbgfFmqzpJN0t/6JNqX70LIlFyQk3amvEtzuyej+S9RwYf5jmu9PWScQyvhHS2C9lRea9OwIDAQAB",
-  "action": {
-    "default_popup": "index.html",
-    "default_icon": "hello_extensions.png"
-  },
   "oauth2": {
     "client_id": "258123725523-h9bfbasesfqg203rorq4prvnb29qlr13.apps.googleusercontent.com",
     "scopes":["email","openid","profile"]
