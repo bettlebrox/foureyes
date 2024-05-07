@@ -1,16 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <title>Waiting for the extension service worker...</title>
-    <script src="/assets/precontroller.js.js"></script>
+    <title>FriendBlock</title>
+    <script type="text/javascript" src="content/auth.js"></script>
+    <style>
+      button {
+        padding: 10px;
+        background-color: #3C79F8;
+        display: inline-block;
+      }
+    </style>
   </head>
   <body>
-    <h1>Waiting for service worker</h1>
-
-    <p>
-      If you see this message, it means the service worker has not loaded fully.
-    </p>
-
-    <p>This page is never added in production.</p>
+    <button>FriendBlock Contacts</button>
+    <div id="friendDiv"></div>
   </body>
 </html>
