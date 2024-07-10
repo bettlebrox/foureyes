@@ -1,6 +1,8 @@
 import { CognitoIdentityClient, GetIdCommand, GetCredentialsForIdentityCommand } from "@aws-sdk/client-cognito-identity"; // ES Modules import
 import { apigClientFactory } from '/workers/apigClient.js'
-
+const config = {
+    inAuthFlow:false
+}
 
 init()
 
@@ -12,26 +14,33 @@ function awsAuth(token){
             "accounts.google.com": token,
         }
     })
-    ci.send(command, function (err, output) {
-        console.log("auth response: " + output +" error: "+err)
-        const cmd = new GetCredentialsForIdentityCommand({
-            IdentityId: output.IdentityId,
-            Logins: { // LoginsMap
-                "accounts.google.com": token,
-            }
-        })
-        ci.send(cmd, function (err, output) {
-            chrome.storage.local.set({
-                'accessKeyId': output.Credentials.AccessKeyId,
-            'secretAccessKey': output.Credentials.SecretKey,
-            'sessionToken': output.Credentials.SessionToken,
-            }, function () {
-                console.log("credentials stored")
+    ci.send(command).then(
+        (data) => {
+            console.log("auth response: " + data)
+            const cmd = new GetCredentialsForIdentityCommand({
+                IdentityId: data.IdentityId,
+                Logins: { // LoginsMap
+                    "accounts.google.com": token,
+                }
             })
-            console.log("credentials response: " +output + " error: "+err)
-        })
-    })
-
+            ci.send(cmd, function (err, output) {
+                chrome.storage.local.set({
+                    'accessKeyId': output.Credentials.AccessKeyId,
+                'secretAccessKey': output.Credentials.SecretKey,
+                'sessionToken': output.Credentials.SessionToken,
+                'sessionExpiration': Math.floor(output.Credentials.Expiration/1000),
+                'google_id_token': token
+                }, function () {
+                    console.log("credentials stored, google token: " + token+" expiration: "+output.Credentials.Expiration)
+                })
+                console.log("credentials response: " +output + " error: "+err)
+            })
+        },
+        (error) => {
+          console.log("auth failed: " + error)
+          init()
+        }
+      );
 }
 
 function init(){
@@ -45,6 +54,11 @@ function init(){
         '&access_type=offline' +
         '&redirect_uri=' + redirectUri +
         '&scope=' + scopes;
+    if(config.inAuthFlow){
+        console.log("Already in auth flow, not starting another one")
+        return
+    }
+    config.inAuthFlow = true
     chrome.identity.launchWebAuthFlow(
         {
             'url': url,
@@ -53,10 +67,12 @@ function init(){
         function (redirectedTo) {
             if (chrome.runtime.lastError) {
                 console.log("Auth page could not be loaded: "+chrome.runtime.lastError.message);
+                config.inAuthFlow = false
                 return
             }
             const token = redirectedTo.split('#', 2)[1].split('&')[0].split('id_token=')[1];
             awsAuth(token)
+            config.inAuthFlow = false
         }
     );
 }
@@ -70,8 +86,14 @@ function createNavlog(webNavigationDetails, tab) {
         'url': webNavigationDetails.url,
         'body_inner_text': webNavigationDetails.body_inner_text
     }
+    if(webNavigationDetails.parentDocumentId) {
+        navlog['parentDocumentId'] = webNavigationDetails.parentDocumentId
+    }
     if (webNavigationDetails.transitionType) {
         navlog['transitionType'] = webNavigationDetails.transitionType
+    }
+    if (webNavigationDetails.transitionQualifiers) {
+        navlog['transitionQualifiers'] = webNavigationDetails.transitionQualifiers
     }
     return navlog
 }
@@ -89,15 +111,25 @@ function createNavlogFromContent(message, sender) {
     return navlog;
 }
 function postNavlog(navlog) {
-        chrome.storage.local.get(['accessKeyId', 'secretAccessKey', 'sessionToken'], async function (result) {
+        chrome.storage.local.get(['accessKeyId', 'secretAccessKey', 'sessionToken','sessionExpiration','google_id_token'], async function (storage_result) {
+            console.log("Expiration: "+storage_result.sessionExpiration + " now: "+Date.now())
+            if(storage_result.sessionExpiration < Date.now()) {
+                console.log("Session expired, re-authenticating with google token: " + storage_result.google_id_token)
+                awsAuth(storage_result.google_id_token)
+                return
+            }
             var apigClient = apigClientFactory.newClient({
-                accessKey: result.accessKeyId,
-                secretKey: result.secretAccessKey,
-                sessionToken: result.sessionToken,
+                accessKey: storage_result.accessKeyId,
+                secretKey: storage_result.secretAccessKey,
+                sessionToken: storage_result.sessionToken,
                 region: 'eu-west-1' }) 
             apigClient.apiNavlogsPost({}, navlog, {})
                 .then(function(result){
-                   console.log("Navigation log posted successfully");
+                   console.log("Navigation log post status: "+result.status);
+                   if(result.status === 403) {
+                        console.log("Authentication failed, re-authenticating with google token: " + storage_result.google_id_token)
+                        awsAuth(storage_result.google_id_token)
+                   } 
                 }).catch( function(result){
                     console.log("Navigation log posting failed", result);
                 });

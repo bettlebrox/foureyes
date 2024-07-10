@@ -381,7 +381,7 @@ apiGateway.core.sigV4ClientFactory.newClient = function (config) {
             url: url,
             headers: headers,
             data: body
-        };
+        };//HANDLE 403
         return fetch(signedRequest.url,{
             method:signedRequest.method, headers:signedRequest.headers,body:signedRequest.data
         });
