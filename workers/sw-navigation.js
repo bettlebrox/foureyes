@@ -112,8 +112,8 @@ function createNavlogFromContent(message, sender) {
 }
 function postNavlog(navlog) {
         chrome.storage.local.get(['accessKeyId', 'secretAccessKey', 'sessionToken','sessionExpiration','google_id_token'], async function (storage_result) {
-            console.log("Expiration: "+storage_result.sessionExpiration + " now: "+Date.now())
-            if(storage_result.sessionExpiration < Date.now()) {
+            console.log("Expiration: "+storage_result.sessionExpiration + " now: "+Date.now()/1000)
+            if(storage_result.sessionExpiration < Date.now()/1000) {
                 console.log("Session expired, re-authenticating with google token: " + storage_result.google_id_token)
                 awsAuth(storage_result.google_id_token)
                 return
