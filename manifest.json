@@ -6,11 +6,17 @@
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmp0MkoFR+6ypkTdHNhR9KKp2ndanTHT32TT1mD1m1fY3gsOUckOZeEP2qGh3CZ/dAEDsijTwizxLDzAQZ+CZpMo7SDHuUsM2CcJuKzT+BfGcbNVnrARapR+732R7wJ5lb7ldxxEZ0EH6v5hTUCH2L9qHo4NDsTCBy0CmJsPoeMOBSGInltL3F8DGlp7XX2BK6cUqrpNML0leFd+bqLAAtDh6wgHqM860rXjWFu4TaWvph+ENE+243JKEMzA/O0ANnkFTme4aogSuOiqTbgfFmqzpJN0t/6JNqX70LIlFyQk3amvEtzuyej+S9RwYf5jmu9PWScQyvhHS2C9lRea9OwIDAQAB",
   "oauth2": {
     "client_id": "258123725523-h9bfbasesfqg203rorq4prvnb29qlr13.apps.googleusercontent.com",
-    "scopes":["email","openid","profile"]
+    "scopes": ["email", "openid", "profile"]
   },
   "background": {
     "service_worker": "workers/service-worker.js",
     "type": "module"
+  },
+  "action": {
+    "default_title": "Log in"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
   },
   "permissions": [
     "storage",
@@ -18,28 +24,19 @@
     "webNavigation",
     "tabs",
     "offscreen",
-    "identity"
+    "identity",
+    "sidePanel"
   ],
-  "host_permissions": [
-    "https://*/*"
-  ],
+  "host_permissions": ["https://*/*"],
   "content_scripts": [
     {
-      "matches": [
-        "https://*/*"
-      ],
-      "js": [
-        "content/html2canvas.min.js"
-      ],
+      "matches": ["https://*/*"],
+      "js": ["content/html2canvas.min.js"],
       "run_at": "document_start"
     },
     {
-      "matches": [
-        "https://*/*"
-      ],
-      "js": [
-        "content/content.js"
-      ],
+      "matches": ["https://*/*"],
+      "js": ["content/content.js"],
       "run_at": "document_idle"
     }
   ]

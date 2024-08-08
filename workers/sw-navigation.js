@@ -1,10 +1,28 @@
 import { CognitoIdentityClient, GetIdCommand, GetCredentialsForIdentityCommand } from "@aws-sdk/client-cognito-identity"; // ES Modules import
 import { apigClientFactory } from '/workers/apigClient.js'
+import { Amplify } from "aws-amplify";
+import { post } from 'aws-amplify/api';
+import outputs from "/workers/amplify_outputs.json";
+Amplify.configure(outputs);
+const existingConfig = Amplify.getConfig();
+
+Amplify.configure({
+  ...existingConfig,
+  API: {
+    ...existingConfig.API,
+    REST: {
+      ...existingConfig.API?.REST,
+      Dassie: {
+        endpoint: "https://p5cgnlejzk.execute-api.eu-west-1.amazonaws.com/prod", //'http://localhost:3000',//
+        region: "eu-west-1", // Optional
+      },
+    },
+  },
+});
 const config = {
     inAuthFlow:false
 }
-
-init()
+//init()
 
 function awsAuth(token){
     const ci = new CognitoIdentityClient({ region: "eu-west-1" })
@@ -110,8 +128,32 @@ function createNavlogFromContent(message, sender) {
     }
     return navlog;
 }
+function handleSubmit(){
+    console.log("handleSubmit")
+}
+async function postItem(navlog, handleSubmitComplete) {
+    try {
+      const restOperation = post({
+        apiName: 'Dassie',
+        path: '/api/themes',
+        options: {
+          body: navlog,
+        },
+      });
+  
+      const { body } = await restOperation.response;
+      const response = await body.json();
+      handleSubmitComplete();
+      console.log('POST call succeeded');
+      console.log(response);
+    } catch (error) {
+      console.log('POST call failed: ');
+      handleSubmitComplete();
+    }
+  }
 function postNavlog(navlog) {
-        chrome.storage.local.get(['accessKeyId', 'secretAccessKey', 'sessionToken','sessionExpiration','google_id_token'], async function (storage_result) {
+    postItem(navlog, handleSubmit)
+        /*chrome.storage.local.get(['accessKeyId', 'secretAccessKey', 'sessionToken','sessionExpiration','google_id_token'], async function (storage_result) {
             console.log("Expiration: "+storage_result.sessionExpiration + " now: "+Date.now()/1000)
             if(storage_result.sessionExpiration < Date.now()/1000) {
                 console.log("Session expired, re-authenticating with google token: " + storage_result.google_id_token)
@@ -133,7 +175,7 @@ function postNavlog(navlog) {
                 }).catch( function(result){
                     console.log("Navigation log posting failed", result);
                 });
-        })
+        })*/
 }
 
 function getTabandPost(webNavigationDetails) {
@@ -163,3 +205,10 @@ chrome.runtime.onMessage.addListener(function (request, sender) {
         postNavlog(navlog)
     }
 })
+
+const sidebarPage = 'sidepanel.html'; // Path to your sidebar HTML file
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.sidePanel.setOptions({ path: sidebarPage });
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+});
