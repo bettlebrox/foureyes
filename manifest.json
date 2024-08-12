@@ -38,6 +38,11 @@
       "matches": ["https://*/*"],
       "js": ["content/content.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["http://localhost:5174/*"],
+      "js": ["content/content.js"],
+      "run_at": "document_idle"
     }
   ]
 }

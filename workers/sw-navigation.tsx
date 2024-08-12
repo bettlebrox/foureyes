@@ -32,7 +32,7 @@ async function isLoggedIn() {
 }
 
 function createNavlog(webNavigationDetails, tab) {
-  var navlog = {
+  const navlog = {
     type: "navigation",
     title: tab.title,
     tabId: String(webNavigationDetails.tabId),
@@ -54,7 +54,7 @@ function createNavlog(webNavigationDetails, tab) {
 }
 
 function createNavlogFromContent(message, sender) {
-  var navlog = {
+  const navlog = {
     type: "content",
     title: message.title,
     tabId: String(sender.tab.id),
@@ -100,7 +100,7 @@ function getTabAndPost(webNavigationDetails) {
         webNavigationDetails.transitionType == "auto_subframe")
     )
       return;
-    var navlog = createNavlog(webNavigationDetails, tab);
+    const navlog = createNavlog(webNavigationDetails, tab);
     console.debug("posting navlog...:" + navlog);
     postNavlog(navlog);
   });
@@ -113,11 +113,25 @@ chrome.webNavigation.onCommitted.addListener((details) => {
   getTabAndPost(details);
 });
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender) => {
   console.debug("received message: " + request + sender);
   if (request.type && request.type == "content") {
-    var navlog = createNavlogFromContent(request, sender);
+    const navlog = createNavlogFromContent(request, sender);
     postNavlog(navlog);
+  } else if (request.type && request.type == "authStorage") {
+    switch (request.method) {
+      case "setItem":
+        authStorage.setItem(request.key, request.value);
+        break;
+      case "removeItem":
+        authStorage.removeItem(request.key);
+        break;
+      case "clear":
+        authStorage.clear();
+        break;
+      default:
+        break;
+    }
   }
   return true;
 });

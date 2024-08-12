@@ -7,7 +7,7 @@ export class ChromeStorage implements KeyValueStorageInterface {
     chrome.storage.sync.set(item);
   }
   async getItem(key: string): Promise<string | null> {
-    let value = await chrome.storage.sync.get(key);
+    const value = await chrome.storage.sync.get(key);
     return value[key];
   }
   async removeItem(key: string): Promise<void> {
