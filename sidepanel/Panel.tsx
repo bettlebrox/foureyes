@@ -1,5 +1,4 @@
 import { fetchUserAttributes } from "aws-amplify/auth";
-import React from "react";
 import { useState } from "react";
 const ALLOWED_ORIGINS = [
   "http://localhost:5174",

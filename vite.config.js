@@ -10,9 +10,7 @@ export default defineConfig({
     jsxFragment: 'Fragment'
   },  
   build: {
-    minify: false,
-    rollupOptions: {
-      external:["popup/popup.js","aws-amplify"]
-    },
+    minify: false
+
   },
 })

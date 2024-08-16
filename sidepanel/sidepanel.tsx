@@ -4,7 +4,6 @@ import outputs from "../workers/amplify_outputs.json";
 import "@aws-amplify/ui-react/styles.css";
 import { cognitoUserPoolsTokenProvider } from "aws-amplify/auth/cognito";
 import { ChromeStorage } from "../common/ChromeStorage";
-import React from "react";
 import { Panel } from "./Panel";
 const DASSIE_BASE_URL = "http://localhost:5174";
 Amplify.configure(outputs);

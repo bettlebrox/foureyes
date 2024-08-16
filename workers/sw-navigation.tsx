@@ -27,39 +27,72 @@ async function isLoggedIn() {
     await getCurrentUser();
     return true;
   } catch (error) {
+    console.debug(error);
     return false;
   }
 }
+interface NavLog {
+  transitionType?: string;
+  transitionQualifiers?: string[];
+  body_inner_text?: string;
+  parentDocumentId?: string;
+  type: string;
+  title: string | undefined;
+  url: string;
+  tabId: string;
+  timestamp: string;
+  documentId: string | undefined;
+}
 
-function createNavlog(webNavigationDetails, tab) {
-  const navlog = {
+function createNavlog(
+  webNavigationDetails:
+    | chrome.webNavigation.WebNavigationTransitionCallbackDetails
+    | chrome.webNavigation.WebNavigationFramedCallbackDetails,
+  tab: chrome.tabs.Tab
+) {
+  const navlog: NavLog = {
     type: "navigation",
     title: tab.title,
     tabId: String(webNavigationDetails.tabId),
     timestamp: String(webNavigationDetails.timeStamp),
     documentId: String(webNavigationDetails.documentId),
     url: webNavigationDetails.url,
-    body_inner_text: webNavigationDetails.body_inner_text,
   };
-  if (webNavigationDetails.parentDocumentId) {
-    navlog["parentDocumentId"] = webNavigationDetails.parentDocumentId;
+  if ("body_inner_text" in webNavigationDetails) {
+    navlog.body_inner_text = String(webNavigationDetails.body_inner_text);
   }
-  if (webNavigationDetails.transitionType) {
-    navlog["transitionType"] = webNavigationDetails.transitionType;
+  if ("parentDocumentId" in webNavigationDetails) {
+    navlog.parentDocumentId = String(webNavigationDetails.parentDocumentId);
   }
-  if (webNavigationDetails.transitionQualifiers) {
-    navlog["transitionQualifiers"] = webNavigationDetails.transitionQualifiers;
+  if ("transitionType" in webNavigationDetails) {
+    navlog.transitionType = webNavigationDetails.transitionType;
+  }
+  if ("transitionQualifiers" in webNavigationDetails) {
+    navlog.transitionQualifiers = webNavigationDetails.transitionQualifiers;
   }
   return navlog;
 }
-
-function createNavlogFromContent(message, sender) {
+interface ContentPageMessage {
+  title: string;
+  url: string;
+  body_inner_html: string;
+  body_text: string;
+  image: string;
+}
+function createNavlogFromContent(
+  message: ContentPageMessage,
+  sender: chrome.runtime.MessageSender
+): NavLog | undefined {
+  if (!sender.tab) {
+    console.debug("sender tab is undefined");
+    return undefined;
+  }
   const navlog = {
     type: "content",
     title: message.title,
     tabId: String(sender.tab.id),
     timestamp: String(Date.now()),
-    documentId: String(sender.tab.documentId),
+    documentId: sender.documentId ? String(sender.documentId) : undefined,
     url: message.url,
     body_inner_html:
       "body_inner_html" in message
@@ -71,9 +104,13 @@ function createNavlogFromContent(message, sender) {
   };
   return navlog;
 }
-async function postNavlog(navlog) {
+async function postNavlog(navlog: NavLog | undefined) {
   if (!(await isLoggedIn())) {
     console.debug("skipping post, not logged in");
+    return;
+  }
+  if (!navlog) {
+    console.debug("skipping post, no navlog");
     return;
   }
   try {
@@ -81,22 +118,26 @@ async function postNavlog(navlog) {
       apiName: "Dassie",
       path: "/api/navlogs",
       options: {
-        body: navlog,
+        body: JSON.stringify(navlog),
       },
     });
   } catch (error) {
-    console.log("POST call failed: ");
+    console.log("POST call failed: " + error);
   }
 }
 
-function getTabAndPost(webNavigationDetails) {
+function getTabAndPost(
+  webNavigationDetails:
+    | chrome.webNavigation.WebNavigationTransitionCallbackDetails
+    | chrome.webNavigation.WebNavigationFramedCallbackDetails
+) {
   chrome.tabs.get(webNavigationDetails.tabId, function (tab) {
     if (
       !tab ||
       (webNavigationDetails.url && webNavigationDetails.url == "about:blank") ||
       (webNavigationDetails.frameType &&
         webNavigationDetails.frameType == "sub_frame") ||
-      (webNavigationDetails.transitionType &&
+      ("transitionType" in webNavigationDetails &&
         webNavigationDetails.transitionType == "auto_subframe")
     )
       return;
