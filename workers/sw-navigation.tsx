@@ -104,13 +104,9 @@ function createNavlogFromContent(
   };
   return navlog;
 }
-async function postNavlog(navlog: NavLog | undefined) {
+async function postNavlog(navlog: NavLog) {
   if (!(await isLoggedIn())) {
     console.debug("skipping post, not logged in");
-    return;
-  }
-  if (!navlog) {
-    console.debug("skipping post, no navlog");
     return;
   }
   try {
@@ -118,7 +114,8 @@ async function postNavlog(navlog: NavLog | undefined) {
       apiName: "Dassie",
       path: "/api/navlogs",
       options: {
-        body: JSON.stringify(navlog),
+        //@ts-expect-error need to convert this to typescript
+        body: navlog,
       },
     });
   } catch (error) {
@@ -158,7 +155,7 @@ chrome.runtime.onMessage.addListener((request, sender) => {
   console.debug("received message: " + request + sender);
   if (request.type && request.type == "content") {
     const navlog = createNavlogFromContent(request, sender);
-    postNavlog(navlog);
+    if (navlog) postNavlog(navlog);
   } else if (request.type && request.type == "authStorage") {
     switch (request.method) {
       case "setItem":
