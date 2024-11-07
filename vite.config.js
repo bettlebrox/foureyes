@@ -13,4 +13,11 @@ export default defineConfig({
     minify: false
 
   },
+  server: {
+    port: 5173,
+    strictPort: true,
+    hmr: {
+      port: 5173,
+    },
+  },
 })
