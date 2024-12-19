@@ -8,6 +8,12 @@
     "client_id": "258123725523-h9bfbasesfqg203rorq4prvnb29qlr13.apps.googleusercontent.com",
     "scopes": ["email", "openid", "profile"]
   },
+  "omnibox": {
+    "keyword": "@d"
+  },
+  "icons": {
+    "16": "icon_16.png"
+  },
   "background": {
     "service_worker": "workers/service-worker.js",
     "type": "module"
